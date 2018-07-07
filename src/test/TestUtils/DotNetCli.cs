@@ -13,11 +13,13 @@ namespace Microsoft.DotNet.Cli.Build
         public string BinPath { get; }
         public string GreatestVersionSharedFxPath { get; private set; }
         public string GreatestVersionHostFxrPath { get; private set; } 
+        public IReadOnlyList<string> SdkPaths { get; private set; }
 
         public DotNetCli(string binPath)
         {
             BinPath = binPath;
             ComputeSharedFxPaths();
+            ComputeSdkPaths();
         }
 
         public Command Exec(string command, params string[] args)
@@ -70,6 +72,21 @@ namespace Microsoft.DotNet.Cli.Build
             GreatestVersionHostFxrPath = hostFxrVersionDirectories 
                 .OrderByDescending(p => p.ToLower()) 
                 .First();                 
+        }
+
+        private void ComputeSdkPaths()
+        {
+            var sdkBaseDirectory = Path.Combine(BinPath, "sdk");
+            if (!Directory.Exists(sdkBaseDirectory))
+            {
+                SdkPaths = Array.Empty<string>();
+                return;
+            }
+
+            SdkPaths = Directory.EnumerateDirectories(sdkBaseDirectory)
+                .OrderBy(p => p.ToLower())
+                .ToList()
+                .AsReadOnly();
         }
     }
 }
